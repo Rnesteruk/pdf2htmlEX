@@ -7,18 +7,19 @@
  * 2012.08.14
  */
 
+#include <boost/format.hpp>
+// for gil bug
+const int *int_p_NULL = nullptr;
+#include <boost/gil/gil_all.hpp>
+#include <boost/gil/extension/io/png_dynamic_io.hpp>
+
 #include "HTMLRenderer.h"
 #include "util/namespace.h"
 
-namespace pdf2htmlEX {
+using namespace boost::gil;
 
 void HTMLRenderer::drawImage(GfxState * state, Object * ref, Stream * str, int width, int height, GfxImageColorMap * colorMap, GBool interpolate, int *maskColors, GBool inlineImg)
 {
-    tracer.draw_image(state);
-
-    return OutputDev::drawImage(state,ref,str,width,height,colorMap,interpolate,maskColors,inlineImg);
-
-#if 0
     if(maskColors)
         return;
 
@@ -52,16 +53,14 @@ void HTMLRenderer::drawImage(GfxState * state, Object * ref, Stream * str, int w
     img_stream->close();
     delete img_stream;
 
-    close_line();
+    close_cur_line();
 
-    double ctm[6];
-    memcpy(ctm, state->getCTM(), sizeof(ctm));
+    double * ctm = state->getCTM();
     ctm[4] = ctm[5] = 0.0;
     html_fout << format("<img class=\"i t%2%\" style=\"left:%3%px;bottom:%4%px;width:%5%px;height:%6%px;\" src=\"i%|1$x|.png\" />") % image_count % install_transform_matrix(ctm) % state->getCurX() % state->getCurY() % width % height << endl;
 
 
     ++ image_count;
-#endif
 }
 
 void HTMLRenderer::drawSoftMaskedImage(GfxState *state, Object *ref, Stream *str,
@@ -72,12 +71,12 @@ void HTMLRenderer::drawSoftMaskedImage(GfxState *state, Object *ref, Stream *str
                    int maskWidth, int maskHeight,
                    GfxImageColorMap *maskColorMap,
                    GBool maskInterpolate)
-{
-    tracer.draw_image(state);
+    {
+        tracer.draw_image(state);
 
-    return OutputDev::drawSoftMaskedImage(state,ref,str, // TODO really required?
-            width,height,colorMap,interpolate,
-            maskStr, maskWidth, maskHeight, maskColorMap, maskInterpolate);
-}
+        return OutputDev::drawSoftMaskedImage(state,ref,str, // TODO really required?
+                width,height,colorMap,interpolate,
+                maskStr, maskWidth, maskHeight, maskColorMap, maskInterpolate);
+    }
 
 } // namespace pdf2htmlEX
